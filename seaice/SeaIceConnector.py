@@ -470,6 +470,34 @@ class SeaIceConnector:
         return None
       raise e
 
+  def formatAndInsertTerm(self, app, termData, l, prod_mode, seaice):
+    # xxx add check for non-empty term_string before consuming new 'id'
+    # xxx add check for temporary, test term_string and then only consume
+    #     a test 'id'
+    term = {
+      'term_string' : seaice.pretty.refs_norm(self, termData['term_string']),
+      'definition' : seaice.pretty.refs_norm(self, termData['definition']),
+      'examples' : seaice.pretty.refs_norm(self, termData['examples']),
+      'owner_id' : l.current_user.id,
+      'id' : app.termIdPool.ConsumeId() }
+
+    (id, concept_id) = self.insertTerm(term, prod_mode)
+
+    # Special handling is needed for brand new tags, which always return
+    # "(undefined/ambiguous)" qualifiers at the moment of definition.
+    #
+    if term['term_string'].startswith('#{g:'):    # if defining a tag
+      #term['term_string'] = '#{g: %s | %s}' % (    # correct our initial
+      term['term_string'] = '%s%s | %s}' % (    # correct our initial
+        seaice.pretty.tagstart,
+        seaice.pretty.ixuniq + termData['term_string'][1:],
+        concept_id)         # guesses and update
+      self.updateTerm(term['id'], term, None, prod_mode)
+
+    self.commit()
+    app.dbPool.enqueue(self)
+    return concept_id
+
   def removeTerm(self, id, persistent_id, prod_mode):
     """ Remove term row from the database.
 

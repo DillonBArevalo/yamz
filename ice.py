@@ -655,32 +655,8 @@ def addTerm():
 
   if request.method == "POST":
     g.db = app.dbPool.dequeue()
-    # xxx add check for non-empty term_string before consuming new 'id'
-    # xxx add check for temporary, test term_string and then only consume
-    #     a test 'id'
-    term = {
-      #'term_string' : request.form['term_string'],
-      'term_string' : seaice.pretty.refs_norm(g.db, request.form['term_string']),
-      'definition' : seaice.pretty.refs_norm(g.db, request.form['definition']),
-      'examples' : seaice.pretty.refs_norm(g.db, request.form['examples']),
-      'owner_id' : l.current_user.id,
-      'id' : app.termIdPool.ConsumeId() }
+    concept_id = g.db.formatAndInsertTerm(app, request.form, l, prod_mode, seaice)
 
-    (id, concept_id) = g.db.insertTerm(term, prod_mode)
-
-    # Special handling is needed for brand new tags, which always return
-    # "(undefined/ambiguous)" qualifiers at the moment of definition.
-    #
-    if term['term_string'].startswith('#{g:'):		# if defining a tag
-      #term['term_string'] = '#{g: %s | %s}' % (		# correct our initial
-      term['term_string'] = '%s%s | %s}' % (		# correct our initial
-        seaice.pretty.tagstart,
-        seaice.pretty.ixuniq + request.form['term_string'][1:],
-	concept_id)					# guesses and update
-      g.db.updateTerm(term['id'], term, None, prod_mode)
-
-    g.db.commit()
-    app.dbPool.enqueue(g.db)
     return getTerm(concept_id,
         message = "Your term has been added to the metadictionary!")
 
@@ -930,6 +906,27 @@ def trackTerm(term_id):
   g.db.commit()
   print "User #%d %sed term #%d" % (l.current_user.id, request.form['action'], term_id)
   return redirect("/term=%s" % g.db.getTermConceptId(term_id))
+
+@app.route('/import', methods=['POST', 'GET'])
+@l.login_required
+def importTerms():
+  if request.method == 'POST':
+    return 'hi'
+  else:
+
+    return render_template('import.html',
+                           user_name=l.current_user.name
+                           )
+
+@app.route('/export/type=<exportType>')
+def exportTerms(exportType):
+  data = {"test": "data2"}
+  response = app.response_class(
+        response=json.dumps(data),
+        status=200,
+        mimetype='application/json'
+    )
+  return response
 
 ## Start HTTP server. (Not relevant on Heroku.) ##
 if __name__ == '__main__':
