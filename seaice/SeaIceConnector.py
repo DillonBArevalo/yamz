@@ -498,6 +498,9 @@ class SeaIceConnector:
     app.dbPool.enqueue(self)
     return concept_id
 
+  def formatAndInsertMultipleTerms(self, app, terms, l, prod_mode, seaice):
+    print 'running multi-insert'
+
   def removeTerm(self, id, persistent_id, prod_mode):
     """ Remove term row from the database.
 
@@ -556,7 +559,7 @@ class SeaIceConnector:
     return cur.fetchone()
 
   def getTermsByTermString(self, term_string):
-    """ Get term by term string.
+    """ Get terms by term string.
 
     :param term_string: natural language string for term.
     :type term_string: str
@@ -575,6 +578,22 @@ class SeaIceConnector:
     for row in results:
       yield row
 
+  def getTermsListByTermString(self, term_string):
+    """ Get terms by term string.
+
+    :param term_string: natural language string for term.
+    :type term_string: str
+    :rtype: list
+    """
+    cur = self.con.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT id, owner_id, created, modified, term_string,
+               definition, examples, up, down, consensus, class,
+               U_sum, D_sum, T_last, T_stable, tsv, concept_id, persistent_id
+            FROM SI.Terms
+            WHERE LOWER(term_string)=LOWER(%s);
+        """, (term_string,))
+    return cur.fetchall()
 
   def getTermString(self, id):
     """ Get term string by ID.

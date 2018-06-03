@@ -39,6 +39,7 @@ import os, sys, optparse, re
 import json, psycopg2 as pgdb
 
 from pagination import *
+from importing import *
 
 ## Parse command line options. ##
 
@@ -427,7 +428,7 @@ def getTerm(term_concept_id = None, message = ""):
 
     result = '<p><a href="/term/all_of_name/concept=%s">view all terms with the natural language string %s</a></p>' % (term_concept_id, term['term_string'])
     result += seaice.pretty.printTermAsHTML(g.db, term, l.current_user.id)
-    result = message + "<hr>" + result + "<hr>"
+    result = message + "<hr>" + result
     result += seaice.pretty.printCommentsAsHTML(g.db, g.db.getCommentHistory(term['id']),
                                                l.current_user.id)
     if l.current_user.id:
@@ -447,7 +448,8 @@ def getTerm(term_concept_id = None, message = ""):
     return render_template("basic_page.html", user_name = l.current_user.name,
                             title = "Term %s" % term['term_string'],
                             headline = "Term",
-                            content = Markup(result.decode('utf-8')))
+                            content = Markup(result.decode('utf-8')),
+                            subheading = Markup(('<a href="/export/exportType=id/value=%s">export term</a>' % term_concept_id).decode('utf-8')))
 
   ## Look up terms by name and concept id (for order) ##
 
@@ -506,7 +508,8 @@ def getTermsOfName(term_concept_id = None, message = ""):
   return render_template("basic_page.html", user_name = l.current_user.name,
                           title = "Term %s" % term_string,
                           headline = "Terms",
-                          content = Markup(content.decode('utf-8')))
+                          content = Markup(content.decode('utf-8')),
+                          subheading = Markup(('<a href="/export/exportType=name/value=%s">export terms</a>' % term_string).decode('utf-8')))
 
 @app.route("/browse")
 @app.route("/browse/<listing>")
@@ -911,19 +914,70 @@ def trackTerm(term_id):
 @l.login_required
 def importTerms():
   if request.method == 'POST':
-    return 'hi'
-  else:
 
+    try:
+      terms = json.loads(request.form["termJson"])
+
+      if not isinstance(terms, list):
+        error = "Import is not a list, please surround your term(s) with brackets ([])"
+      elif terms == [
+                      {
+                        "term_string": "example term string",
+                        "definition": "an example definition",
+                        "examples": "these are some examples!"
+                      },
+                      {
+                        "term_string": "example term string 2",
+                        "definition": "a second example definition",
+                        "examples": "these are some other examples!"
+                      }
+                    ]:
+        error = "Please don't enter the example terms. These actually go in the database."
+      else:
+
+        i=0
+        while i < len(terms):
+          if not correctFormatting(terms[i]):
+            error = "Error in term number " + str(i + 1) + ". Each term must contain term_string, definition, and examples even if they are only empty quotes."
+            return render_template('import.html',
+                             user_name=l.current_user.name,
+                             textValue=request.form["termJson"],
+                             error=error)
+          i +=1
+
+        g.db = app.dbPool.dequeue()
+        # concept_id = g.db.formatAndInsertMultipleTerms(app, terms, l, prod_mode, seaice)
+        return redirect(url_for('index'))
+    except ValueError as e:
+      error = e
     return render_template('import.html',
-                           user_name=l.current_user.name
-                           )
+                           user_name=l.current_user.name,
+                           textValue=request.form["termJson"],
+                           error=error)
 
-@app.route('/export/type=<exportType>')
-def exportTerms(exportType):
-  data = {"test": "data2"}
+  else:
+    return render_template('import.html',
+                           user_name=l.current_user.name)
+
+@app.route('/export/exportType=<exportType>/value=<value>')
+def exportTerms(exportType, value):
+  g.db = app.dbPool.getScoped()
+
+  if exportType == "name":
+    terms = g.db.getTermsListByTermString(value)
+    # we're probably going to want to do a more detailed data recovery. like put user info in with the terms
+  elif exportType == "id":
+    terms = g.db.getTermByConceptId(value)
+
+  try:
+    data = json.dumps(terms, default=str)
+    status = 200
+  except:
+    data = json.dumps({"status": "failure"})
+    status = 500
   response = app.response_class(
-        response=json.dumps(data),
-        status=200,
+        response=data,
+        status=status,
         mimetype='application/json'
     )
   return response

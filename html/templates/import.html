@@ -1,11 +1,7 @@
 {% extends 'layout.html' %}
 
 {% block title %}
-      {% if title %}
-        {{ title }}
-      {% else %}
-        A basic page
-      {% endif %}
+      Import terms
 {% endblock %}
 
 
@@ -29,6 +25,8 @@
         <b>"term_string":</b> "title of your term. Ex: Ablation",
         <b>"definition":</b> "your term definition. Enter as you would in the new term form.",
         <b>"examples":</b> "these are some examples!"
+        <br>
+        These fields use the same formatting as on the <a href="/contribute">Add</a> page (see <a href="/guidelines" target="_blank">guidelines<a>).
       </td>
       <td valign=top align=right width=30%>
          <form action="/search" method="post">
@@ -45,18 +43,38 @@
 
     <div class="container justify-content-between">
       <div class="col-sm-7 container">
-        <form action="" class="control-group">
+        <form action="/import" method="POST" class="control-group d-flex flex-column">
           <label class="control-label" for="user-input">Enter terms to be added in JSON format: </label>
+          {% if error %}
+            <div class="alert alert-warning">
+              <a href="#" class="close" data-dismiss="alert">&times;</a>
+              <strong>Error</strong> Unable to process your terms.
+              <br>
+              Error text: {{error}}
+            </div>
+          {% endif %}
+          <textarea
+            rows="17"
+            class="form-control input-lg"
+            name="termJson"
+            id="user-input"
+            style='max-width: 100%'
+          >{% if textValue %}{{textValue}}{% endif %}</textarea>
           <br>
-          <textarea rows="17" class="form-control input-lg" name="" id="user-input" style='max-width: 100%'></textarea>
+          <label for="input-type-selector">Operation Type:</label>
+          <select name="type" id="input-type-selector">
+            <option value="add">Add</option>
+            <option value="edit" disabled>Edit (not currently supported)</option>
+            <option value="delete" disabled>Delete (not currently supported)</option>
+          </select>
           <br>
-          <input class="btn btn-default" type="submit" value="Add Terms">
+          <input class="btn btn-default" type="submit" value="Submit">
         </form>
       </div>
       <div class="col-sm-4 col-sm-offset-1 container control-group">
         <label for="example-input" class="control-label">Example terms: </label>
         <br>
-        <textarea rows="17" class="form-control input-lg" readonly id="example-input">{&#13;&#10;"term_string": "example term string", &#13;&#10;"definition": "an example definition", &#13;&#10;"examples": "these are some examples!"&#13;&#10;}, &#13;&#10;{&#13;&#10;"term_string": "example term string 2", &#13;&#10;"definition": "a second example definition", &#13;&#10;"examples": "these are some other examples!"&#13;&#10;}</textarea>
+        <textarea rows="17" class="form-control input-lg" readonly id="example-input">[{&#13;&#10;"term_string": "example term string", &#13;&#10;"definition": "an example definition", &#13;&#10;"examples": "these are some examples!"&#13;&#10;}, &#13;&#10;{&#13;&#10;"term_string": "example term string 2", &#13;&#10;"definition": "a second example definition", &#13;&#10;"examples": "these are some other examples!"&#13;&#10;}]</textarea>
       </div>
     </div>
 
