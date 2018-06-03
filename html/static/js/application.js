@@ -23,6 +23,8 @@ var logoutOrcidListener = function () {
   $('.orcid-login').on('click', function (e) {
     var loginLink = $(this);
     e.preventDefault();
+    loginLink.after("<p class='loading'>loading...</p>");
+    loginLink.remove();
     $.ajax({
         url: 'https://sandbox.orcid.org/userStatus.json?logUserOut=true',
         dataType: 'jsonp',
@@ -30,9 +32,9 @@ var logoutOrcidListener = function () {
           window.location = loginLink.attr('href');
         },
         error: function (xhr, status, error) {
-          console.warn('failure')
+          $('.loading').text('something went wrong. Please try again');
+          console.warn('failure');
         }
     });
-
-  })
+  });
 }
