@@ -579,7 +579,7 @@ class SeaIceConnector:
       yield row
 
   def getTermsListByTermString(self, term_string):
-    """ Get terms by term string.
+    """ Get terms by term string for export.
 
     :param term_string: natural language string for term.
     :type term_string: str
@@ -587,11 +587,37 @@ class SeaIceConnector:
     """
     cur = self.con.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
     cur.execute("""
-        SELECT id, owner_id, created, modified, term_string,
-               definition, examples, up, down, consensus, class,
-               U_sum, D_sum, T_last, T_stable, tsv, concept_id, persistent_id
-            FROM SI.Terms
-            WHERE LOWER(term_string)=LOWER(%s);
+        SELECT  id, created, modified, term_string,
+                definition, examples, up, down, consensus, class,
+                U_sum, D_sum, T_last, T_stable, tsv, concept_id,
+                persistent_id,
+                (
+                  SELECT row_to_json(u)
+                  FROM(
+                    SELECT id, first_name, last_name, orcid
+                    FROM SI.Users
+                    WHERE id=SI.Terms.owner_id
+                  ) u
+                ) as user,
+                (
+                  SELECT array_to_json(array_agg(row_to_json(c)))
+                  FROM(
+                    SELECT comment_string, created, modified,
+                    (
+                      SELECT row_to_json(u)
+                      FROM(
+                        SELECT id, first_name, last_name, orcid
+                        FROM SI.Users
+                        WHERE id=SI.Comments.owner_id
+                      ) u
+                    ) as user
+                    FROM SI.Comments
+                    WHERE term_id=SI.Terms.id
+                  ) c
+                ) as comments
+
+              FROM SI.Terms
+              WHERE LOWER(term_string)=LOWER(%s)
         """, (term_string,))
     return cur.fetchall()
 
