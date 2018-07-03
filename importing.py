@@ -10,12 +10,7 @@ def correctFormatting(termDict):
     return False
 
   for key in ['term_string', 'definition', 'examples']:
-    try: # use get instead
-      if not isinstance(termDict[key], basestring):
-        print termDict[key]
-        print isinstance(termDict[key], basestring)
-        return False
-    except:
+    if not isinstance(termDict.get(key, False), basestring):
       return False
 
   return True
