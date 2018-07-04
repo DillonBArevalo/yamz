@@ -26,7 +26,7 @@ YAMZ Search
               <form action="/search" method="post">
                 <div class="control-group">
                   <!-- <label class="control-label"></label> -->
-                  <div class="controls"><input name="term_string" type="text" class="input-lg search-query form-control" placeholder="Search for a term"></div>
+                  <div class="controls"><input name="term_string" style="min-width: 200px" type="text" class="input-lg search-query form-control" placeholder="Search for a term"></div>
                 </div>
               </form>
             </td>
@@ -36,6 +36,9 @@ YAMZ Search
                Not finding what you're looking for? You can always <a href="/contribute">propose</a>
                a new term. Take a look at our <a href="/guidelines">community guidelines</a>
                for tips and suggestions on contributing to the metadictionary.
+               <br>
+               If you did find what you're looking for and want the raw data in JSON form, you can
+               <a href="/export/exportType=search/value={{term_string}}">export</a> it here!
               </p>
             </td>
           </tr>

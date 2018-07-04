@@ -61,6 +61,7 @@ Karthik Ram{% endblock %}
               <td valign=top>
                 <h4>My terms</h4>
                 {% if my %}
+                  <p><a href="/export/exportType=user/value={{id}}">export</a> your terms</p>
                   {{ my }}
                 {% else %}
                   <font color="#B8B8B8"><i>You haven't contributed any terms.</i></font>

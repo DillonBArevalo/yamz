@@ -621,6 +621,111 @@ class SeaIceConnector:
         """, (term_string,))
     return cur.fetchall()
 
+    # can probably consolidate with the above.
+  def getExportListFromOwnerId(self, owner_id):
+    """ Get terms by owner id for export.
+
+    :param term_string: natural language string for term.
+    :type term_string: str
+    :rtype: list
+    """
+    cur = self.con.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT  id, created, modified, term_string,
+                definition, examples, up, down, consensus, class,
+                U_sum, D_sum, T_last, T_stable, tsv, concept_id,
+                persistent_id,
+                (
+                  SELECT row_to_json(u)
+                  FROM(
+                    SELECT id, first_name, last_name, orcid
+                    FROM SI.Users
+                    WHERE id=SI.Terms.owner_id
+                  ) u
+                ) as user,
+                (
+                  SELECT array_to_json(array_agg(row_to_json(c)))
+                  FROM(
+                    SELECT comment_string, created, modified,
+                    (
+                      SELECT row_to_json(u)
+                      FROM(
+                        SELECT id, first_name, last_name, orcid
+                        FROM SI.Users
+                        WHERE id=SI.Comments.owner_id
+                      ) u
+                    ) as user
+                    FROM SI.Comments
+                    WHERE term_id=SI.Terms.id
+                  ) c
+                ) as comments
+
+              FROM SI.Terms
+              WHERE owner_id = %s
+        """, (owner_id,))
+    return cur.fetchall()
+
+
+  def getExportListFromSearch(self, string):
+    """ Search table by term_string, definition and examples. Rank
+        results by relevance to query, consensus, and classificaiton.
+
+    :param string: Search query.
+    :type string: str
+    :rtype: dict list
+    """
+    try:
+      string = string.replace("'", "''")
+      string = ' & '.join(string.split(' '))
+      # |'s are also allowed, and paranthesis TODO
+      # xxx are we correctly insulating naive queriers?
+      cur = self.con.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+      cur.execute("""
+        SELECT id, created, modified, term_string,
+                definition, examples, up, down, consensus, class,
+                U_sum, D_sum, T_last, T_stable, tsv, concept_id,
+                persistent_id,
+                (
+                  SELECT row_to_json(u)
+                  FROM(
+                    SELECT id, first_name, last_name, orcid
+                    FROM SI.Users
+                    WHERE id=SI.Terms.owner_id
+                  ) u
+                ) as user,
+                (
+                  SELECT array_to_json(array_agg(row_to_json(c)))
+                  FROM(
+                    SELECT comment_string, created, modified,
+                    (
+                      SELECT row_to_json(u)
+                      FROM(
+                        SELECT id, first_name, last_name, orcid
+                        FROM SI.Users
+                        WHERE id=SI.Comments.owner_id
+                      ) u
+                    ) as user
+                    FROM SI.Comments
+                    WHERE term_id=SI.Terms.id
+                  ) c
+                ) as comments
+          FROM SI.Terms, to_tsquery('english', %s) query
+          WHERE query @@ tsv
+       """, (string,))
+
+    except Exception as e:
+      print >>sys.stderr, e.pgerror
+      cur.execute("ROLLBACK;")  # else one error can wedge entire service
+      rows = []
+      return list(rows)
+    #  return None
+    #  raise e
+
+    # return cur.fetchAll()
+    rows = sorted(cur.fetchall(), key=lambda row: orderOfClass[row['class']])
+    rows = sorted(rows, key=lambda row: row['consensus'], reverse=True)
+    return list(rows)
+
   def getTermString(self, id):
     """ Get term string by ID.
 

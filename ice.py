@@ -190,7 +190,8 @@ def index():
     return render_template("index.html", user_name = l.current_user.name,
                    my = Markup(my.decode('utf-8')) if my else None,
                    star = Markup(star.decode('utf-8')) if star else None,
-                   notify = Markup(notify.decode('utf-8')) if notify else None)
+                   notify = Markup(notify.decode('utf-8')) if notify else None,
+                   id = l.current_user.id )
 
   return render_template("index.html", user_name = l.current_user.name)
 
@@ -968,6 +969,10 @@ def exportTerms(exportType, value):
     # we're probably going to want to do a more detailed data recovery. like put user info in with the terms
   elif exportType == "id":
     terms = g.db.getTermByConceptId(value)
+  elif exportType == "user":
+    terms = g.db.getExportListFromOwnerId(value)
+  elif exportType == "search":
+    terms = g.db.getExportListFromSearch(value)
 
   try:
     data = json.dumps(terms, default=str)
