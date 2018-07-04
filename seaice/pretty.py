@@ -775,7 +775,7 @@ def printTermsAsBriefHTML(db_con, rows, user_id=0):
           row['up'] - row['down'],
           summarizeConsensus(row['consensus']),
           row['class'],
-          "<a target='_blank' href='https://sandbox.orcid.org/%s'>%s</a>" % (orcid, name) if orcid else name,
+          "<a target='_blank' href='https://sandbox.orcid.org/%s' aria-label='Link to user %ss orcID page'>%s</a>" % (orcid, name, name) if orcid else name,
           #row['concept_id'],
           colorOf[row['class']],
           printPrettyDate(row['modified']))
