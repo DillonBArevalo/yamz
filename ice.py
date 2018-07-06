@@ -968,7 +968,7 @@ def exportTerms(exportType, value):
     terms = g.db.getTermsListByTermString(value)
     # we're probably going to want to do a more detailed data recovery. like put user info in with the terms
   elif exportType == "id":
-    terms = g.db.getTermByConceptId(value)
+    terms = g.db.getTermByConceptIdForExport(value)
   elif exportType == "user":
     terms = g.db.getExportListFromOwnerId(value)
   elif exportType == "search":

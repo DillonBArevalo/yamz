@@ -578,6 +578,49 @@ class SeaIceConnector:
     for row in results:
       yield row
 
+  def getTermByConceptIdForExport(self, concept_id):
+    """ Get term by Concept Id.
+
+    :param concept_id: Concept Id.
+    :type concept_id: str
+    :rtype: dict or None
+    """
+    cur = self.con.cursor(cursor_factory = psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT  id, created, modified, term_string,
+                definition, examples, up, down, consensus, class,
+                U_sum, D_sum, T_last, T_stable, tsv, concept_id,
+                persistent_id,
+                (
+                  SELECT row_to_json(u)
+                  FROM(
+                    SELECT id, first_name, last_name, orcid
+                    FROM SI.Users
+                    WHERE id=SI.Terms.owner_id
+                  ) u
+                ) as user,
+                (
+                  SELECT array_to_json(array_agg(row_to_json(c)))
+                  FROM(
+                    SELECT comment_string, created, modified,
+                    (
+                      SELECT row_to_json(u)
+                      FROM(
+                        SELECT id, first_name, last_name, orcid
+                        FROM SI.Users
+                        WHERE id=SI.Comments.owner_id
+                      ) u
+                    ) as user
+                    FROM SI.Comments
+                    WHERE term_id=SI.Terms.id
+                  ) c
+                ) as comments
+
+              FROM SI.Terms
+              WHERE concept_id=%s
+        """, (concept_id,))
+    return cur.fetchone()
+
   def getTermsListByTermString(self, term_string):
     """ Get terms by term string for export.
 
