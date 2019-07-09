@@ -2,6 +2,8 @@
 [dev]
 google_client_id = 000-fella.apps.googleusercontent.com
 google_client_secret = SECRET1
+orcid_client_id = ORCID_ID
+orcid_client_secret = ORCID_SECRET
 app_secret = SECRET2
 minter_password = SECRET3
 
