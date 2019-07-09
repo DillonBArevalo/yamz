@@ -5,7 +5,7 @@ should be easily adaptable to any system; YAMZ is written in Python and uses
 only cross-platform packages.  This file is formatted by hand and does not
 contain markdown.
 
-  Authored by Chris Patton. Last updated 2 November 2017 (Dillon Arevalo).
+  Authored by Chris Patton. Last updated 8 July 2019 (Dillon Arevalo).
 
 YAMZ is formerly known as SeaIce; for this reason, the database tables
 and API use names based on "SeaIce".
@@ -64,7 +64,6 @@ The contents of this directory are as follows:
 
   doc/ . . . . . . . . . . . API documentation and tools for building it.
 
-#  .seaice/.seaic_auth  . . . DB credentials, API keys, app key, etc. Note
   .seaice/.seaice_auth  . . . DB credentials, API keys, app key, etc. Note
                              that these files are just templates and don't
                              contain actual keys.
@@ -72,8 +71,11 @@ The contents of this directory are as follows:
 Before you get started, you need to set up a database and some software
 packages.  On Mac OS X, this may suffice:
 
-  $ pip install psycopg2 Flask configparser flask-login flask-OAuth \
+  # $ pip install psycopg2 Flask configparser flask-login flask-OAuth \
       python-dateutil
+  $ pip install -r requirements.txt
+
+
 
 On Ubuntu, grab the following:
 
@@ -203,13 +205,16 @@ and must not be published.  Set the correct file permissions with:
 
   $ chmod 600 .seaice
 
+you might also need to run
+
+  $ chmod 600 .seaice_auth
+
+(This is mentioned in section 1.4)
+
 This file is used by the SeaIce DB connector to grant access to the database.
 To initialize the DB schema and tables, type:
 
 #  $ ./sea.py --init-db --config=.seaice
-=====================
-I also needed $ chmod 600 .seaice_auth
-=====================
   $ ./sea.py --init-db --config=local_deploy/.seaice
 
 
@@ -302,12 +307,17 @@ xxx to do: let people create test terms that expire in two weeks
   [dev]
   google_client_id = 000-fella.apps.googleusercontent.com
   google_client_secret = SECRET1
+  orcid_client_id = ORCID_ID
+  orcid_client_secret = ORCID_SECRET
   app_secret = SECRET2
+  minter_password = SECRET3
 
   [heroku]
   google_client_id = 000-guy.apps.googleusercontent.com
   google_client_secret = SECRET3
   app_secret = SECRET4
+  minter_password = SECRET3
+
 
 IMPORTANT NOTE: A template of this file is provided in the github
 repository. This file should remain secret and must not be published.
@@ -316,8 +326,8 @@ We provide the template, since heroku requires a commited file.
 IMPORTANT WIP NOTE FOR CURRENT DEV VERSION: There are currently orcid
 oauth keys being asked for as well. the dev credentials above will also
 want to have an orcid_client_id and an orcid_client_secret obtainable
-from sandbox. Alternatively (and the recommended option): Comment out
-mentions to orcid oauth in ice.py
+from sandbox. Alternatively: Comment out mentions to orcid oauth in
+ice.py or put random strings in for the orcid credentials
 lines to comment: 119-120
                   281-331
 
@@ -359,10 +369,7 @@ and update, should it be set to "enable" (the default is don't enable).
 
 First, create the database schema:
 
-   $ ./sea --config=.seaice --init-db
-  ===========
-    needs to be $ ./sea.py --config=.seaice --init-db
-  ===========
+   $ ./sea.py --config=.seaice --init-db
 
 Start the local server with:
 
